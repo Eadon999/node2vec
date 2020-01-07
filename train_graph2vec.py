@@ -13,21 +13,22 @@ def train_graph2vec(args):
     start_training_time = time.time()
     graph_builder = GraphBuilder()
     print("Reading...")
-
+    print("graph format:" + args.graph_format+parsed_args.input)
     if args.graph_format == 'adjlist':
         graph_builder.read_adjlist(filename=args.input)
     elif args.graph_format == 'edgelist':
-        print("graph format:" + args.graph_format)
         graph_builder.read_edgelist(filename=args.input, weighted=args.weighted,
                                     directed=args.directed)
     if args.method == 'node2vec':
         model = Node2vec(graph=graph_builder, path_length=args.walk_length,
                          num_paths=args.number_walks, dim=args.representation_size,
                          workers=args.workers, p=args.p, q=args.q, window=args.window_size)
+        model.fit_node2vec()
     elif args.method == 'deepWalk':
         model = Node2vec(graph=graph_builder, path_length=args.walk_length,
                          num_paths=args.number_walks, dim=args.representation_size,
                          workers=args.workers, window=args.window_size, dw=True)
+        model.fit_node2vec()
     else:
         exit()
         print("method select")
@@ -40,7 +41,7 @@ def train_graph2vec(args):
 
     if args.label_file:
         print("Start training classify model to calculate performance")
-        vectors = model.vectors
+        vectors = model.embedding_vector
         X, Y = read_node_label(args.label_file)
         print("Training classifier using {:.2f}% nodes...".format(
             args.clf_ratio * 100))
@@ -55,4 +56,8 @@ if __name__ == "__main__":
     test_mode = True
     parser = ArgsParser()
     parsed_args = parser.parse_args(test_mode)
+    parsed_args.input = './data/wiki/Wiki_edgelist.txt'
+    parsed_args.label_file = './data/wiki/wiki_labels.txt'
+    parsed_args.graph_format = 'edgelist'
     train_graph2vec(parsed_args)
+
